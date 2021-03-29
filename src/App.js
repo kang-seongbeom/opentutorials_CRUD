@@ -17,7 +17,7 @@ class App extends Component {
     super(props);
     this.max_content_id = 3;
     this.state = {
-      mode: 'create',
+      mode: 'welcome',
       selected_content_id: 2,
       subject: { title: 'State web', sub: 'world wide web' },
       welcome: { title: 'welcome', des: 'hello, welcome' },
@@ -46,34 +46,47 @@ class App extends Component {
       _title = this.state.welcome.title;
       _des = this.state.welcome.des;
       _article = <ReadContent title={_title} des={_des} />
+
     } else if (this.state.mode === 'read') {
       var _content = this.getReadContent();
       _article = <ReadContent title={_content.title} des={_content.des} />
+
     } else if (this.state.mode === 'create') {
       _article = <CreateContent onSubmit={(_title, _des) => {
         this.max_content_id++;
         var _content = this.state.contents.concat({ id: this.max_content_id, title: _title, des: _des });
         this.setState({
-          contents: _content
+          contents: _content,
+          mode: 'read',
+          selected_content_id: this.max_content_id
         });
       }} />
 
     } else if (this.state.mode === 'update') {
-      var _content = this.getReadContent();
-      _article = <UpdateContent data={ _content } onSubmit={(_title, _des) => {
-        this.max_content_id++;
-        var _content = this.state.contents.concat({ id: this.max_content_id, title: _title, des: _des });
+      _content = this.getReadContent();
+      _article = <UpdateContent data={ _content } onSubmit={(_id, _title, _des) => {
+        //원본을 바꾸지않고 원본의 값을 받아온 뒤(concat과 비슷), 수정하고, 다시 셋팅
+        var _contents = Array.from(this.state.contents);
+        var i = 0;
+        while(i<_contents.length){
+          if(_contents[i].id === _id){
+            _contents[i] = {id: _id, title: _title, des: _des}
+            break;
+          }
+          i++;
+        }
         this.setState({
-          contents: _content
+          contents: _contents,
+          mode: 'read'
         });
       }} />
     }
+    return _article;
   }
 
   //함수
   render() {
     console.log("App render()");
-
     return (
       <div className="App">
         <Subject
@@ -87,12 +100,33 @@ class App extends Component {
           data={this.state.contents} />
 
         <Controller onChageMode={(_mode) => {
-          this.setState({
-            mode: _mode
-          });
+          if(_mode === 'delete'){
+            if(window.confirm('realy?')){
+              var _contents = Array.from(this.state.contents);
+              console.log("de",_contents);
+              var i = 0;
+              while(i < _contents.length){     
+                if(_contents[i].id === this.state.selected_content_id){                
+                  _contents.splice(i,1);                  
+                  break;
+                }
+                i++;
+              }
+              this.setState({
+                mode: 'welcome',
+                contents: _contents
+              });
+            }
+            alert('delected!');
+          }else{
+            this.setState({
+              mode: _mode
+            });
+          }
         }} />
 
         {this.getContent()}
+
       </div>
     );
   }
